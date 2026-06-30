@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Employee Analytics Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Segoe UI,sans-serif;
+}
+
+body{
+
+background:#0b0d13;
+color:white;
+
+}
+
+.sidebar{
+
+position:fixed;
+left:0;
+top:0;
+height:100%;
+width:260px;
+
+background:#111827;
+
+padding:20px;
+
+box-shadow:0 0 25px cyan;
+
+}
+
+.sidebar h2{
+
+text-align:center;
+margin-bottom:40px;
+
+color:#00ffff;
+
+text-shadow:0 0 15px cyan;
+
+}
+
+.sidebar a{
+
+display:block;
+
+padding:15px;
+
+margin-bottom:10px;
+
+color:white;
+
+text-decoration:none;
+
+border-radius:10px;
+
+transition:.3s;
+
+}
+
+.sidebar a:hover{
+
+background:#00ffff;
+
+color:black;
+
+box-shadow:0 0 15px cyan;
+
+}
+
+.main{
+
+margin-left:280px;
+
+padding:30px;
+
+}
+
+.header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:25px;
+
+}
+
+.header h1{
+
+color:#00ffff;
+
+text-shadow:0 0 15px cyan;
+
+}
+
+.upload{
+
+background:#00ffff;
+
+color:black;
+
+padding:12px 20px;
+
+border:none;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-weight:bold;
+
+}
+
+.controls{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:12px;
+
+align-items:center;
+
+margin-top:10px;
+
+}
+
+.search{
+
+background:#161b22;
+
+color:white;
+
+border:1px solid cyan;
+
+padding:12px 14px;
+
+border-radius:10px;
+
+min-width:220px;
+
+}
+
+.filter-chip{
+
+display:inline-flex;
+
+align-items:center;
+
+gap:8px;
+
+background:rgba(0,255,255,.1);
+
+color:#e0f7ff;
+
+border:1px solid rgba(0,255,255,.3);
+
+border-radius:999px;
+
+padding:8px 12px;
+
+font-size:.95rem;
+
+margin-bottom:10px;
+
+}
+
+.filter-chip button{
+
+background:none;
+
+border:none;
+
+color:#00ffff;
+
+cursor:pointer;
+
+font-size:1rem;
+
+}
+
+.active-filters{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:10px;
+
+margin-bottom:20px;
+
+}
+
+.upload.secondary{
+
+background:#39ff14;
+
+color:#000;
+
+}
+
+.chart-grid.hidden{
+
+display:none;
+
+}
+
+.table-hover tbody tr:hover{
+
+background:#1f2533;
+
+cursor:pointer;
+
+}
+
+#employeeTable th[data-key]{
+
+cursor:pointer;
+
+position:relative;
+
+}
+
+#employeeTable th[data-key]::after{
+
+content:'';
+
+position:absolute;
+
+right:12px;
+
+top:50%;
+
+transform:translateY(-50%);
+
+border:5px solid transparent;
+
+opacity:.5;
+
+}
+
+#employeeTable th[data-key][data-sorted="asc"]::after{
+
+border-bottom-color:#00ffff;
+
+}
+
+#employeeTable th[data-key][data-sorted="desc"]::after{
+
+border-top-color:#00ffff;
+
+}
+
+.filter-chip{
+
+display:inline-flex;
+
+align-items:center;
+
+gap:8px;
+
+background:rgba(0,255,255,.12);
+
+color:#e0f7ff;
+
+border:1px solid rgba(0,255,255,.3);
+
+border-radius:999px;
+
+padding:8px 12px;
+
+font-size:.95rem;
+
+margin-bottom:10px;
+
+}
+
+.filter-chip button{
+
+background:none;
+
+border:none;
+
+color:#00ffff;
+
+cursor:pointer;
+
+font-size:1rem;
+
+}
+
+.active-filters{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:10px;
+
+margin-bottom:20px;
+
+}
+
+.selected-row{
+
+background:#0f172a!important;
+
+border-left:4px solid #00ffff;
+
+}
+
+.modal-overlay{
+
+position:fixed;
+
+top:0;
+
+left:0;
+
+width:100%;
+
+height:100%;
+
+background:rgba(0,0,0,.75);
+
+backdrop-filter:blur(4px);
+
+display:none;
+
+align-items:center;
+
+justify-content:center;
+
+z-index:999;
+
+}
+
+.modal-overlay.active{
+
+display:flex;
+
+}
+
+.modal{
+
+background:#111827;
+
+padding:25px;
+
+border-radius:20px;
+
+border:1px solid #00ffff;
+
+width:min(520px,95%);
+
+box-shadow:0 0 35px rgba(0,255,255,.25);
+
+}
+
+.modal h3{
+
+margin-bottom:15px;
+
+color:#00ffff;
+
+}
+
+.modal .modal-row{
+
+display:flex;
+
+justify-content:space-between;
+
+margin-bottom:12px;
+
+}
+
+.modal .modal-row span{
+
+color:#cbd5e1;
+
+}
+
+.modal .modal-close{
+
+background:#00ffff;
+
+border:none;
+
+padding:10px 16px;
+
+border-radius:10px;
+
+cursor:pointer;
+
+font-weight:700;
+
+}
+
+.kpis{
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+gap:20px;
+
+margin-bottom:30px;
+
+}
+
+.card{
+
+background:#111827;
+
+padding:25px;
+
+border-radius:20px;
+
+border:1px solid #222;
+
+transition:.3s;
+
+}
+
+.card:hover{
+
+transform:translateY(-8px);
+
+box-shadow:0 0 25px #00ffff;
+
+}
+
+.card h2{
+
+font-size:35px;
+
+color:#00ffff;
+
+}
+
+.card p{
+
+margin-top:10px;
+
+font-size:18px;
+
+}
+
+.filters{
+
+display:grid;
+
+grid-template-columns:repeat(4,1fr);
+
+gap:15px;
+
+margin-bottom:30px;
+
+}
+
+.filters select{
+
+background:#161b22;
+
+color:white;
+
+border:1px solid cyan;
+
+padding:12px;
+
+border-radius:10px;
+
+}
+
+.chart-grid{
+
+display:grid;
+
+grid-template-columns:repeat(2,1fr);
+
+gap:25px;
+
+}
+
+.chart-box{
+
+background:#161b22;
+
+padding:20px;
+
+border-radius:15px;
+
+box-shadow:0 0 15px rgba(0,255,255,.2);
+
+}
+
+.chart-box h3{
+
+margin-bottom:20px;
+
+color:#39ff14;
+
+}
+
+canvas{
+
+width:100%!important;
+
+height:400px!important;
+
+}
+
+table{
+
+width:100%;
+
+margin-top:40px;
+
+border-collapse:collapse;
+
+}
+
+th{
+
+background:#00ffff;
+
+color:black;
+
+padding:12px;
+
+}
+
+td{
+
+padding:10px;
+
+border-bottom:1px solid #333;
+
+}
+
+tbody tr:hover{
+
+background:#1b1f2a;
+
+}
+
+@media(max-width:1100px){
+
+.kpis{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+.chart-grid{
+
+grid-template-columns:1fr;
+
+}
+
+.filters{
+
+grid-template-columns:repeat(2,1fr);
+
+}
+
+}
+
+@media(max-width:700px){
+
+.sidebar{
+
+display:none;
+
+}
+
+.main{
+
+margin-left:0;
+
+}
+
+.kpis{
+
+grid-template-columns:1fr;
+
+}
+
+.filters{
+
+grid-template-columns:1fr;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="sidebar">
+
+<h2>EMPLOYEE BI</h2>
+
+<a href="#"><i class="fa fa-chart-line"></i> Dashboard</a>
+
+<a href="#"><i class="fa fa-users"></i> Employees</a>
+
+<a href="#"><i class="fa fa-globe"></i> Locations</a>
+
+<a href="#"><i class="fa fa-money-bill"></i> Salary</a>
+
+<a href="#"><i class="fa fa-star"></i> Performance</a>
+
+<a href="#"><i class="fa fa-cog"></i> Settings</a>
+
+</div>
+
+<div class="main">
+
+<div class="header">
+
+<h1>Employee Analytics Dashboard</h1>
+
+<div class="controls">
+
+<label for="excelFile" class="upload">Upload Excel</label>
+
+<button id="loadSample" class="upload secondary">Load Sample Data</button>
+
+<button id="toggleCharts" class="upload secondary">Toggle Charts</button>
+
+<button id="downloadCsv" class="upload">Export CSV</button>
+
+<button id="resetBtn" class="upload">Reset</button>
+
+<input type="text" id="searchInput" class="search" placeholder="Search by name, department or country">
+
+</div>
+
+<input type="file" id="excelFile" class="upload" style="display:none;">
+
+</div>
+
+<div class="kpis">
+
+<div class="card">
+
+<h2 id="empCount">0</h2>
+
+<p>Total Employees</p>
+
+</div>
+
+<div class="card">
+
+<h2 id="avgSalary">0</h2>
+
+<p>Average Salary</p>
+
+</div>
+
+<div class="card">
+
+<h2 id="avgExp">0</h2>
+
+<p>Average Experience</p>
+
+</div>
+
+<div class="card">
+
+<h2 id="avgPerformance">0</h2>
+
+<p>Performance Score</p>
+
+</div>
+
+</div>
+
+<div class="filters">
+
+<select id="countryFilter">
+
+<option value="">All Countries</option>
+
+</select>
+
+<select id="departmentFilter">
+
+<option value="">Department</option>
+
+</select>
+
+<select id="genderFilter">
+
+<option value="">Gender</option>
+
+</select>
+
+<select id="stateFilter">
+
+<option value="">State</option>
+
+</select>
+
+</div>
+
+<div id="activeFilters" class="active-filters"></div>
+
+<div class="chart-grid">
+
+<div class="chart-box">
+
+<h3>Salary by Department</h3>
+
+<canvas id="salaryChart"></canvas>
+
+</div>
+
+<div class="chart-box">
+
+<h3>Gender Distribution</h3>
+
+<canvas id="genderChart"></canvas>
+
+</div>
+
+<div class="chart-box">
+
+<h3>Country Distribution</h3>
+
+<canvas id="countryChart"></canvas>
+
+</div>
+
+<div class="chart-box">
+
+<h3>Experience Distribution</h3>
+
+<canvas id="experienceChart"></canvas>
+
+</div>
+
+<div class="chart-box">
+
+<h3>Age Distribution</h3>
+
+<canvas id="ageChart"></canvas>
+
+</div>
+
+<div class="chart-box">
+
+<h3>Performance Score</h3>
+
+<canvas id="performanceChart"></canvas>
+
+</div>
+
+</div>
+
+<table id="employeeTable" class="table-hover">
+
+<thead>
+
+<tr>
+
+<th data-key="ID">ID</th>
+<th data-key="Name">Name</th>
+<th data-key="Department">Department</th>
+<th data-key="Gender">Gender</th>
+<th data-key="Country">Country</th>
+<th data-key="Salary">Salary</th>
+<th data-key="Experience_Years">Experience</th>
+<th data-key="Performance_Score">Performance</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+</tbody>
+
+</table>
+
+<div class="modal-overlay" id="employeeModal">
+  <div class="modal">
+    <h3>Employee Details</h3>
+    <div class="modal-row"><span>Name:</span><strong id="modalName"></strong></div>
+    <div class="modal-row"><span>Department:</span><strong id="modalDepartment"></strong></div>
+    <div class="modal-row"><span>Gender:</span><strong id="modalGender"></strong></div>
+    <div class="modal-row"><span>Country:</span><strong id="modalCountry"></strong></div>
+    <div class="modal-row"><span>State:</span><strong id="modalState"></strong></div>
+    <div class="modal-row"><span>Salary:</span><strong id="modalSalary"></strong></div>
+    <div class="modal-row"><span>Experience:</span><strong id="modalExperience"></strong></div>
+    <div class="modal-row"><span>Performance:</span><strong id="modalPerformance"></strong></div>
+    <div class="modal-row"><span>Age:</span><strong id="modalAge"></strong></div>
+    <button class="modal-close" id="closeModal">Close</button>
+  </div>
+</div>
+
+<script>
+let employeeData = [];
+let salaryChart;
+let genderChart;
+let countryChart;
+let experienceChart;
+let ageChart;
+let performanceChart;
+let tableSort = { key: '', direction: 'asc' };
+
+const sampleData = [
+  {ID: 1, First_Name: 'Emma', Last_Name: 'Johnson', Department: 'Engineering', Gender: 'Female', Country: 'USA', State: 'California', Salary: 95000, Experience_Years: 5, Performance_Score: 88, Age: 29},
+  {ID: 2, First_Name: 'Liam', Last_Name: 'Smith', Department: 'Sales', Gender: 'Male', Country: 'USA', State: 'Texas', Salary: 82000, Experience_Years: 4, Performance_Score: 81, Age: 32},
+  {ID: 3, First_Name: 'Olivia', Last_Name: 'Brown', Department: 'Marketing', Gender: 'Female', Country: 'Canada', State: 'Ontario', Salary: 76000, Experience_Years: 6, Performance_Score: 90, Age: 31},
+  {ID: 4, First_Name: 'Noah', Last_Name: 'Davis', Department: 'Engineering', Gender: 'Male', Country: 'UK', State: 'London', Salary: 108000, Experience_Years: 7, Performance_Score: 92, Age: 35},
+  {ID: 5, First_Name: 'Ava', Last_Name: 'Miller', Department: 'HR', Gender: 'Female', Country: 'USA', State: 'New York', Salary: 68000, Experience_Years: 3, Performance_Score: 84, Age: 27},
+  {ID: 6, First_Name: 'Ethan', Last_Name: 'Wilson', Department: 'Finance', Gender: 'Male', Country: 'Australia', State: 'New South Wales', Salary: 91000, Experience_Years: 8, Performance_Score: 87, Age: 38},
+  {ID: 7, First_Name: 'Sophia', Last_Name: 'Martinez', Department: 'Sales', Gender: 'Female', Country: 'Canada', State: 'Quebec', Salary: 78000, Experience_Years: 5, Performance_Score: 85, Age: 30},
+  {ID: 8, First_Name: 'Mason', Last_Name: 'Garcia', Department: 'Engineering', Gender: 'Male', Country: 'USA', State: 'Washington', Salary: 98000, Experience_Years: 6, Performance_Score: 91, Age: 33},
+  {ID: 9, First_Name: 'Isabella', Last_Name: 'Rodriguez', Department: 'Marketing', Gender: 'Female', Country: 'UK', State: 'Manchester', Salary: 72000, Experience_Years: 4, Performance_Score: 86, Age: 28},
+  {ID: 10, First_Name: 'Logan', Last_Name: 'Lee', Department: 'HR', Gender: 'Male', Country: 'USA', State: 'Florida', Salary: 69000, Experience_Years: 2, Performance_Score: 79, Age: 26}
+];
+
+const filterMap = {
+  countryFilter: 'Country',
+  departmentFilter: 'Department',
+  genderFilter: 'Gender',
+  stateFilter: 'State'
+};
+
+const filterSelects = Array.from(document.querySelectorAll('select'));
+const searchInput = document.getElementById('searchInput');
+const resetBtn = document.getElementById('resetBtn');
+const loadSampleBtn = document.getElementById('loadSample');
+const toggleChartsBtn = document.getElementById('toggleCharts');
+const downloadCsvBtn = document.getElementById('downloadCsv');
+const excelFileInput = document.getElementById('excelFile');
+const employeeModal = document.getElementById('employeeModal');
+const closeModalBtn = document.getElementById('closeModal');
+
+excelFileInput.addEventListener('change', loadExcel);
+loadSampleBtn.addEventListener('click', loadSampleData);
+resetBtn.addEventListener('click', resetFilters);
+searchInput.addEventListener('input', applyFilters);
+toggleChartsBtn.addEventListener('click', toggleCharts);
+downloadCsvBtn.addEventListener('click', downloadCSV);
+closeModalBtn.addEventListener('click', closeModal);
+employeeModal.addEventListener('click', event => {
+  if (event.target === employeeModal) closeModal();
+});
+
+attachTableSort();
+
+function getDisplayName(emp) {
+  if (emp.Name) return emp.Name;
+  return `${emp.First_Name || ''} ${emp.Last_Name || ''}`.trim();
+}
+
+function getCell(emp, keys) {
+  for (const key of keys) {
+    if (emp[key] !== undefined && emp[key] !== null) return emp[key];
+  }
+  return '';
+}
+
+function chartClickFilter(label, type) {
+  const selectId = {
+    Department: 'departmentFilter',
+    Gender: 'genderFilter',
+    Country: 'countryFilter'
+  }[type];
+  if (!selectId) return;
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  select.value = label;
+  applyFilters();
+}
+
+function loadSampleData() {
+  employeeData = sampleData.map(item => ({ ...item }));
+  resetFilters(true);
+  populateFilters();
+  renderFilterChips({});
+  updateDashboard(employeeData);
+}
+
+function loadExcel(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = function(evt) {
+    const data = new Uint8Array(evt.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    employeeData = XLSX.utils.sheet_to_json(sheet);
+
+    resetFilters(true);
+    populateFilters();
+    updateDashboard(employeeData);
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function populateFilters() {
+  filterSelects.forEach(select => {
+    const column = filterMap[select.id];
+    if (!column) return;
+
+    const existingOptions = Array.from(select.querySelectorAll('option[value]')).filter(opt => opt.value !== '');
+    existingOptions.forEach(opt => opt.remove());
+
+    const values = [...new Set(employeeData.map(x => x[column]).filter(v => v !== undefined && v !== null && v !== ''))];
+    values.sort();
+    values.forEach(v => {
+      const option = document.createElement('option');
+      option.value = v;
+      option.text = v;
+      select.appendChild(option);
+    });
+  });
+}
+
+function applyFilters() {
+  let filtered = [...employeeData];
+  const country = document.getElementById('countryFilter').value;
+  const department = document.getElementById('departmentFilter').value;
+  const gender = document.getElementById('genderFilter').value;
+  const state = document.getElementById('stateFilter').value;
+  const search = searchInput.value.trim().toLowerCase();
+
+  if (country) filtered = filtered.filter(x => String(x.Country).toLowerCase() === country.toLowerCase());
+  if (department) filtered = filtered.filter(x => String(x.Department).toLowerCase() === department.toLowerCase());
+  if (gender) filtered = filtered.filter(x => String(x.Gender).toLowerCase() === gender.toLowerCase());
+  if (state) filtered = filtered.filter(x => String(x.State).toLowerCase() === state.toLowerCase());
+  if (search) {
+    filtered = filtered.filter(emp => {
+      const name = getDisplayName(emp).toLowerCase();
+      const departmentValue = String(getCell(emp, ['Department'])).toLowerCase();
+      const countryValue = String(getCell(emp, ['Country'])).toLowerCase();
+      const stateValue = String(getCell(emp, ['State'])).toLowerCase();
+      return name.includes(search) || departmentValue.includes(search) || countryValue.includes(search) || stateValue.includes(search);
+    });
+  }
+
+  renderFilterChips({ country, department, gender, state, search });
+  updateDashboard(filtered);
+}
+
+function renderFilterChips(filters) {
+  const container = document.getElementById('activeFilters');
+  container.innerHTML = '';
+  Object.entries(filters).forEach(([key, value]) => {
+    if (!value) return;
+    const labelMap = {
+      country: 'Country',
+      department: 'Department',
+      gender: 'Gender',
+      state: 'State',
+      search: 'Search'
+    };
+    const chip = document.createElement('div');
+    chip.className = 'filter-chip';
+    chip.innerHTML = `${labelMap[key]}: ${value} <button data-key="${key}">×</button>`;
+    container.appendChild(chip);
+    chip.querySelector('button').addEventListener('click', () => {
+      if (key === 'search') {
+        searchInput.value = '';
+      } else {
+        document.getElementById(`${key}Filter`).selectedIndex = 0;
+      }
+      applyFilters();
+    });
+  });
+}
+
+function resetFilters(skipUpdate = false) {
+  filterSelects.forEach(select => { select.selectedIndex = 0; });
+  searchInput.value = '';
+  renderFilterChips({});
+  if (!skipUpdate) updateDashboard(employeeData);
+}
+
+function updateDashboard(data) {
+  updateKPIs(data);
+  drawSalaryChart(data);
+  drawGenderChart(data);
+  drawCountryChart(data);
+  drawExperienceChart(data);
+  drawAgeChart(data);
+  drawPerformanceChart(data);
+  fillTable(data);
+}
+
+function updateKPIs(data) {
+  const total = data.length;
+  document.getElementById('empCount').innerHTML = total;
+  const avgSalary = total ? data.reduce((a, b) => a + Number(b.Salary || 0), 0) / total : 0;
+  document.getElementById('avgSalary').innerHTML = `$${avgSalary.toFixed(0)}`;
+  const avgExp = total ? data.reduce((a, b) => a + Number(b.Experience_Years || 0), 0) / total : 0;
+  document.getElementById('avgExp').innerHTML = avgExp.toFixed(1);
+  const avgPerf = total ? data.reduce((a, b) => a + Number(b.Performance_Score || 0), 0) / total : 0;
+  document.getElementById('avgPerformance').innerHTML = avgPerf.toFixed(1);
+}
+
+function drawSalaryChart(data) {
+  if (salaryChart) salaryChart.destroy();
+  const dept = {};
+  data.forEach(x => {
+    const key = x.Department || 'Unknown';
+    dept[key] = (dept[key] || 0) + Number(x.Salary || 0);
+  });
+
+  salaryChart = new Chart(document.getElementById('salaryChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(dept),
+      datasets: [{
+        label: 'Salary',
+        data: Object.values(dept),
+        backgroundColor: '#00ffff'
+      }]
+    },
+    options: {
+      onClick: (event, elements) => {
+        if (!elements.length) return;
+        const index = elements[0].index;
+        const label = salaryChart.data.labels[index];
+        chartClickFilter(label, 'Department');
+      },
+      plugins: {
+        tooltip: { enabled: true }
+      }
+    }
+  });
+}
+
+function drawGenderChart(data) {
+  if (genderChart) genderChart.destroy();
+  const g = {};
+  data.forEach(x => {
+    const key = x.Gender || 'Unknown';
+    g[key] = (g[key] || 0) + 1;
+  });
+
+  genderChart = new Chart(document.getElementById('genderChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(g),
+      datasets: [{
+        data: Object.values(g),
+        backgroundColor: ['#00ffff', '#ff00ff', '#39ff14', '#ff9800', '#9c27b0']
+      }]
+    },
+    options: {
+      onClick: (event, elements) => {
+        if (!elements.length) return;
+        const index = elements[0].index;
+        const label = genderChart.data.labels[index];
+        chartClickFilter(label, 'Gender');
+      }
+    }
+  });
+}
+
+function drawCountryChart(data) {
+  if (countryChart) countryChart.destroy();
+  const c = {};
+  data.forEach(x => {
+    const key = x.Country || 'Unknown';
+    c[key] = (c[key] || 0) + 1;
+  });
+
+  countryChart = new Chart(document.getElementById('countryChart'), {
+    type: 'pie',
+    data: {
+      labels: Object.keys(c),
+      datasets: [{
+        data: Object.values(c),
+        backgroundColor: ['cyan', 'orange', 'purple', 'lime', 'pink', 'yellow', 'red']
+      }]
+    },
+    options: {
+      onClick: (event, elements) => {
+        if (!elements.length) return;
+        const index = elements[0].index;
+        const label = countryChart.data.labels[index];
+        chartClickFilter(label, 'Country');
+      }
+    }
+  });
+}
+
+function drawExperienceChart(data) {
+  if (experienceChart) experienceChart.destroy();
+  const e = {};
+  data.forEach(x => {
+    const key = Number(x.Experience_Years) || 0;
+    e[key] = (e[key] || 0) + 1;
+  });
+
+  experienceChart = new Chart(document.getElementById('experienceChart'), {
+    type: 'line',
+    data: {
+      labels: Object.keys(e),
+      datasets: [{
+        label: 'Employees',
+        data: Object.values(e),
+        borderColor: '#39ff14',
+        fill: false
+      }]
+    }
+  });
+}
+
+function drawAgeChart(data) {
+  if (ageChart) ageChart.destroy();
+  const age = {};
+  data.forEach(x => {
+    const key = Number(x.Age) || 0;
+    age[key] = (age[key] || 0) + 1;
+  });
+
+  ageChart = new Chart(document.getElementById('ageChart'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(age),
+      datasets: [{
+        data: Object.values(age),
+        backgroundColor: '#ff00ff'
+      }]
+    }
+  });
+}
+
+function drawPerformanceChart(data) {
+  if (performanceChart) performanceChart.destroy();
+  const p = {};
+  data.forEach(x => {
+    const key = Number(x.Performance_Score) || 0;
+    p[key] = (p[key] || 0) + 1;
+  });
+
+  performanceChart = new Chart(document.getElementById('performanceChart'), {
+    type: 'radar',
+    data: {
+      labels: Object.keys(p),
+      datasets: [{
+        label: 'Performance',
+        data: Object.values(p),
+        backgroundColor: 'rgba(0,255,255,.4)',
+        borderColor: '#00ffff'
+      }]
+    }
+  });
+}
+
+function fillTable(data) {
+  const tbody = document.querySelector('#employeeTable tbody');
+  tbody.innerHTML = '';
+  const sortedData = sortTableData(data);
+
+  sortedData.forEach((emp, index) => {
+    const rowId = emp.ID !== undefined ? String(emp.ID) : String(index);
+    tbody.innerHTML += `
+      <tr data-index="${index}" data-id="${rowId}">
+        <td>${emp.ID || ''}</td>
+        <td>${getDisplayName(emp)}</td>
+        <td>${getCell(emp, ['Department']) || ''}</td>
+        <td>${getCell(emp, ['Gender']) || ''}</td>
+        <td>${getCell(emp, ['Country']) || ''}</td>
+        <td>$${Number(emp.Salary || 0).toLocaleString()}</td>
+        <td>${Number(emp.Experience_Years || 0)}</td>
+        <td>${Number(emp.Performance_Score || 0)}</td>
+      </tr>
+    `;
+  });
+
+  attachRowEvents();
+}
+
+function sortTableData(data) {
+  if (!tableSort.key) return data;
+  return [...data].sort((a, b) => {
+    let aValue = tableSort.key === 'Name' ? getDisplayName(a) : a[tableSort.key];
+    let bValue = tableSort.key === 'Name' ? getDisplayName(b) : b[tableSort.key];
+    if (aValue === undefined || aValue === null) aValue = '';
+    if (bValue === undefined || bValue === null) bValue = '';
+    const aNumber = Number(aValue);
+    const bNumber = Number(bValue);
+    if (!Number.isNaN(aNumber) && !Number.isNaN(bNumber)) {
+      return tableSort.direction === 'asc' ? aNumber - bNumber : bNumber - aNumber;
+    }
+    const aText = String(aValue).toLowerCase();
+    const bText = String(bValue).toLowerCase();
+    if (aText < bText) return tableSort.direction === 'asc' ? -1 : 1;
+    if (aText > bText) return tableSort.direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+}
+
+function attachTableSort() {
+  document.querySelectorAll('#employeeTable th[data-key]').forEach(th => {
+    th.addEventListener('click', () => {
+      const key = th.dataset.key;
+      if (tableSort.key === key) {
+        tableSort.direction = tableSort.direction === 'asc' ? 'desc' : 'asc';
+      } else {
+        tableSort.key = key;
+        tableSort.direction = 'asc';
+      }
+      updateSortIndicators();
+      fillTable(getFilteredData());
+    });
+  });
+}
+
+function updateSortIndicators() {
+  document.querySelectorAll('#employeeTable th[data-key]').forEach(th => {
+    th.removeAttribute('data-sorted');
+    if (th.dataset.key === tableSort.key) {
+      th.setAttribute('data-sorted', tableSort.direction);
+    }
+  });
+}
+
+function attachRowEvents() {
+  document.querySelectorAll('#employeeTable tbody tr').forEach(row => {
+    row.addEventListener('click', () => {
+      document.querySelectorAll('#employeeTable tbody tr').forEach(r => r.classList.remove('selected-row'));
+      row.classList.add('selected-row');
+      const filtered = getFilteredData();
+      const selectedId = row.dataset.id;
+      const emp = filtered.find(item => String(item.ID) === selectedId) || filtered[Number(row.dataset.index)];
+      showEmployeeDetails(emp);
+    });
+  });
+}
+
+function getFilteredData() {
+  let filtered = [...employeeData];
+  const country = document.getElementById('countryFilter').value;
+  const department = document.getElementById('departmentFilter').value;
+  const gender = document.getElementById('genderFilter').value;
+  const state = document.getElementById('stateFilter').value;
+  const search = searchInput.value.trim().toLowerCase();
+
+  if (country) filtered = filtered.filter(x => String(x.Country).toLowerCase() === country.toLowerCase());
+  if (department) filtered = filtered.filter(x => String(x.Department).toLowerCase() === department.toLowerCase());
+  if (gender) filtered = filtered.filter(x => String(x.Gender).toLowerCase() === gender.toLowerCase());
+  if (state) filtered = filtered.filter(x => String(x.State).toLowerCase() === state.toLowerCase());
+  if (search) {
+    filtered = filtered.filter(emp => {
+      const name = getDisplayName(emp).toLowerCase();
+      const departmentValue = String(getCell(emp, ['Department'])).toLowerCase();
+      const countryValue = String(getCell(emp, ['Country'])).toLowerCase();
+      const stateValue = String(getCell(emp, ['State'])).toLowerCase();
+      return name.includes(search) || departmentValue.includes(search) || countryValue.includes(search) || stateValue.includes(search);
+    });
+  }
+  return filtered;
+}
+
+function showEmployeeDetails(emp) {
+  if (!emp) return;
+  document.getElementById('modalName').textContent = getDisplayName(emp);
+  document.getElementById('modalDepartment').textContent = getCell(emp, ['Department']);
+  document.getElementById('modalGender').textContent = getCell(emp, ['Gender']);
+  document.getElementById('modalCountry').textContent = getCell(emp, ['Country']);
+  document.getElementById('modalState').textContent = getCell(emp, ['State']);
+  document.getElementById('modalSalary').textContent = `$${Number(emp.Salary || 0).toLocaleString()}`;
+  document.getElementById('modalExperience').textContent = `${Number(emp.Experience_Years || 0)} years`;
+  document.getElementById('modalPerformance').textContent = `${Number(emp.Performance_Score || 0)}`;
+  document.getElementById('modalAge').textContent = `${Number(emp.Age || 0)}`;
+  employeeModal.classList.add('active');
+}
+
+function closeModal() {
+  employeeModal.classList.remove('active');
+}
+
+function toggleCharts() {
+  document.querySelector('.chart-grid').classList.toggle('hidden');
+}
+
+function downloadCSV() {
+  const rows = getFilteredData();
+  if (!rows.length) return;
+  const headers = ['ID', 'Name', 'Department', 'Gender', 'Country', 'State', 'Salary', 'Experience_Years', 'Performance_Score', 'Age'];
+  const csv = [headers.join(',')];
+  rows.forEach(emp => {
+    csv.push([
+      emp.ID,
+      getDisplayName(emp),
+      getCell(emp, ['Department']),
+      getCell(emp, ['Gender']),
+      getCell(emp, ['Country']),
+      getCell(emp, ['State']),
+      emp.Salary,
+      emp.Experience_Years,
+      emp.Performance_Score,
+      emp.Age
+    ].join(','));
+  });
+  const blob = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.setAttribute('download', 'employee_data.csv');
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+}
+
+loadSampleData();
+</script>
+
+</body>
+</html>
